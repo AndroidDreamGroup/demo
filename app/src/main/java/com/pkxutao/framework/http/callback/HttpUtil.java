@@ -4,8 +4,6 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
-
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.pkxutao.framework.Tip;
 import com.pkxutao.framework.http.Params;
@@ -85,7 +83,7 @@ public class HttpUtil<T> {
      */
     public void get(String url, String methodName, Params params, HttpCallBack callBack) {
         Request request = buildGetRequest(url, methodName, params);
-        request(request, callBack);
+//        request(request, callBack);
     }
 
     /**
@@ -112,7 +110,7 @@ public class HttpUtil<T> {
         Request request = new Request.Builder()
                 .url(url)
                 .build();
-        request(request, callBack);
+//        request(request, callBack);
     }
 
     /**
@@ -121,9 +119,9 @@ public class HttpUtil<T> {
      * @param paramses 请求参数
      * @param callBack 回调接口
      */
-    public void post(Params paramses, String methodName, HttpCallBack callBack) {
+    public void post(Params paramses, Class temp, String methodName, HttpCallBack callBack) {
         Request request = buildJsonPostRequest(HOST, methodName, paramses);
-        request(request, callBack);
+        request(request, callBack, temp);
     }
 
     /**
@@ -135,7 +133,7 @@ public class HttpUtil<T> {
      */
     public void post(String url, String methodName, Params paramses, HttpCallBack callBack) {
         Request request = buildJsonPostRequest(url, methodName, paramses);
-        request(request, callBack);
+//        request(request, callBack);
     }
 
     /**
@@ -146,7 +144,7 @@ public class HttpUtil<T> {
      */
     public void post(String methodName, JSONObject jsonObject, HttpCallBack callBack) {
         Request request = buildJsonPostRequest(HOST, methodName, jsonObject);
-        request(request, callBack);
+//        request(request, callBack);
     }
 
     /**
@@ -158,7 +156,7 @@ public class HttpUtil<T> {
      */
     public void postWithKV(String url, String methodName, Params params, HttpCallBack callBack) {
         Request request = buildPostRequest(url, methodName, params);
-        request(request, callBack);
+//        request(request, callBack);
     }
 
     /**
@@ -173,7 +171,7 @@ public class HttpUtil<T> {
     public void post(String url, String methodName, File[] files,
                      String[] fileKeys, Params params, HttpCallBack callBack) {
         Request request = buildMultipartFormRequest(url, methodName, files, fileKeys, params);
-        request(request, callBack);
+//        request(request, callBack, entity);
     }
 
     /**
@@ -188,7 +186,7 @@ public class HttpUtil<T> {
     public void post(String url, String methodName, List<byte[]> bytes,
                      String[] fileKeys, Params params, HttpCallBack callBack) {
         Request request = buildMultipartFormRequest(url, methodName, bytes, fileKeys, params);
-        request(request, callBack);
+//        request(request, callBack);
     }
 
     /**
@@ -396,7 +394,7 @@ public class HttpUtil<T> {
      * @param request
      * @param callBack
      */
-    private void request(final Request request, final HttpCallBack<T> callBack) {
+    private void request(final Request request, final HttpCallBack<T> callBack, final Class temp) {
         if (_isShowTip && !isConnected(_context)) {
 //            callBack.onFail(request, new NoNetException("网络错误，请设置网络"));
             Tip.show(_context, "网络错误，请设置网络");
@@ -428,15 +426,14 @@ public class HttpUtil<T> {
             public void onResponse(final Response response) throws IOException {
                 String responseStr = response.body().string();
                 try {
-                    entity = com.alibaba.fastjson.JSON.parseObject(responseStr, new TypeReference<T>() {
-                    });
+                    entity = (T)com.alibaba.fastjson.JSON.parseObject(responseStr, temp);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
                 _callBackHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        if (entity != null) {
+                        if (entity == null) {
                             callBack.onFail(request, new com.alibaba.fastjson.JSONException());
                         } else {
                             callBack.onSuccess(entity);

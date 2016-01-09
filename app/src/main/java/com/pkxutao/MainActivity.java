@@ -61,7 +61,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
         Params params = new Params();
         params.put("Client",1);
         params.put("Channelkey", "xiaomi");
-        new HttpUtil<VersionDTO>(this).post(params, "Base/AppGetNewVersion", new HttpUtil.HttpCallBack<VersionDTO>() {
+        new HttpUtil<VersionDTO>(this).post(params, VersionDTO.class, "Base/AppGetNewVersion", new HttpUtil.HttpCallBack<VersionDTO>() {
             @Override
             public void onFail(Request request, Exception e) {
                 LogUtil.e(TAG, "check version fail: "   );
@@ -72,6 +72,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
             public void onSuccess(VersionDTO entity) {
                 if (entity != null){
                     LogUtil.e(TAG, entity.getMsg());
+                }else{
+                    LogUtil.e(TAG, "entity is null");
                 }
             }
         });
