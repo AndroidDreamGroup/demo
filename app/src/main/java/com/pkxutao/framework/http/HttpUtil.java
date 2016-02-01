@@ -4,7 +4,9 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
-import com.pkxutao.framework.Tip;
+
+import com.pkxutao.framework.http.callback.HttpCallBack;
+import com.pkxutao.framework.util.LogUtil;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.FormEncodingBuilder;
@@ -15,11 +17,12 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
 import java.net.FileNameMap;
@@ -28,30 +31,14 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by pkxut on 2015/11/23.
+ * Created by pkxutao on 16/1/1.
  */
 public class HttpUtil {
-    private final static String TAG = HttpUtil.class.getSimpleName();
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-    public static final String HOST = "www.baidu.com";
-
-    private static final int TYPE_CALLBACK_STRING = 1;
-    private static final int TYPE_CALLBACK_BYTE = 2;
-    private static final int TYPE_CALLBACK_INS = 3;
-    private static final int TYPE_CALLBACK_JSON = 4;
-    private static final int TYPE_CALLBACK_FAIL = 5;//需要重新登录时，直接回调失败接口
-
-    String responseStr = null;
-    byte[] responseByte = null;
-    InputStream responseIns = null;
-    JSONObject responseJson = null;
-    JSONException responseException = null;
-
+    public static final String HOST = "http://appapi.estay.com";
     private OkHttpClient _okHttpClient;
     private Context _context;
     Handler _callBackHandler;
-    private int _type;
-    private boolean _isNeedRelogin = true;//如果status返回4，是否需要弹出登录框,默认弹出
     private boolean _isShowTip = false;//网络请求失败时是否自动弹出tip提示
     HttpUtil _httpUtil;
 
@@ -68,69 +55,17 @@ public class HttpUtil {
         this._okHttpClient = _okHttpClient;
     }
 
-    /**
-     * 如果服务器返回未登陆，是否需要弹出登录框
-     *
-     * @param _isNeedReloagin
-     * @return
-     */
-    public HttpUtil setIsNeedReloagin(boolean _isNeedReloagin) {
-        this._isNeedRelogin = _isNeedReloagin;
-        return _httpUtil;
-    }
-
-    public HttpUtil setIsShowTip(boolean isShowTip){
-        this._isShowTip = isShowTip;
-        return _httpUtil;
-    }
-
-    /**
-     * 基础回调
-     */
-    public interface HttpCallBack {
-        void onFailure(Request request, Exception e);
-    }
-
-    /**
-     * 请求成功返回String数据回调接口
-     */
-    public interface StringCallBack extends HttpCallBack {
-        void onSuccess(String response);
-    }
-
-    /**
-     * 请求成功返回byte数组回调接口
-     */
-    public interface BytesCallBack extends HttpCallBack {
-        void onSuccess(byte[] response);
-    }
-
-    /**
-     * 请求成功返回InputStream回调接口
-     */
-    public interface InputStreamCallBack extends HttpCallBack {
-        void onSuccess(InputStream response);
-    }
-
-    /**
-     * 请求成功返回JsonObject对象回调接口
-     * 如果返回数据不是JsonObject对象，则回调onFail
-     */
-    public interface JsonCallBack extends HttpCallBack {
-        void onSuccess(JSONObject response);
-    }
 
     private OkHttpClient getClient() {
         if (_okHttpClient == null) {
             _okHttpClient = new OkHttpClient();
-            _okHttpClient.setReadTimeout(15,TimeUnit.SECONDS);
+            _okHttpClient.setReadTimeout(15, TimeUnit.SECONDS);
             _okHttpClient.setCookieHandler(new CookieManager(
                     new PersistentCookieStore(_context.getApplicationContext()),
                     CookiePolicy.ACCEPT_ALL));
         }
         return _okHttpClient;
     }
-
 
     /**
      * get异步请求
@@ -160,10 +95,10 @@ public class HttpUtil {
      * get同步请求
      *
      * @param url      自定义url
-     * @param callBack 回调接口
-     * @throws IOException
+     * @param params
+     * @param callBack 回调接口  @throws IOException
      */
-    public void get(String url, HttpCallBack callBack) {
+    public void get(String url, Params params, HttpCallBack callBack) {
         Request request = new Request.Builder()
                 .url(url)
                 .build();
@@ -228,7 +163,7 @@ public class HttpUtil {
     public void post(String url, String methodName, File[] files,
                      String[] fileKeys, Params params, HttpCallBack callBack) {
         Request request = buildMultipartFormRequest(url, methodName, files, fileKeys, params);
-        request(request, callBack);
+//        request(request, callBack, entity);
     }
 
     /**
@@ -243,7 +178,7 @@ public class HttpUtil {
     public void post(String url, String methodName, List<byte[]> bytes,
                      String[] fileKeys, Params params, HttpCallBack callBack) {
         Request request = buildMultipartFormRequest(url, methodName, bytes, fileKeys, params);
-        request(request, callBack);
+//        request(request, callBack);
     }
 
     /**
@@ -452,103 +387,55 @@ public class HttpUtil {
      * @param callBack
      */
     private void request(final Request request, final HttpCallBack callBack) {
-        if (_isShowTip && !isConnected(_context)) {
-            callBack.onFailure(request, new NoNetException("网络错误，请设置网络"));
-            Tip.show(_context, "网络错误，请设置网络");
-        }
+//        if (_isShowTip && !isConnected(_context)) {
+////            callBack.onFail(request, new NoNetException("网络错误，请设置网络"));
+//            Tip.show(_context, "网络错误，请设置网络");
+//            return;
+//        }
         OkHttpClient okHttpClient = getClient();
-        Call call = okHttpClient.newCall(request);
+        final Call call = okHttpClient.newCall(request);
         call.enqueue(new Callback() {
-            @Override
-            public void onFailure(final Request request, final IOException e) {
-                _callBackHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        e.printStackTrace();
-                        _callBackHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                callBack.onFailure(request, e);
-                                if (_isShowTip && e.getClass().getSimpleName().equals("SocketTimeoutException")) {
-                                    Tip.show(_context, "超时。。。");//超时
-                                }
-                            }
-                        });
-                    }
-                });
-            }
+                         @Override
+                         public void onFailure(final Request request, final IOException e) {
+                             _callBackHandler.post(new Runnable() {
+                                 @Override
+                                 public void run() {
+                                     callBack.onHandleFailure(request, e);
+                                 }
+                             });
+                         }
 
-            @Override
-            public void onResponse(final Response response) throws IOException {
-                responseStr = response.body().string();
-                    if (callBack instanceof StringCallBack) {
-                        _type = TYPE_CALLBACK_STRING;
-                    } else if (callBack instanceof BytesCallBack) {
-                        responseByte = response.body().bytes();
-                        _type = TYPE_CALLBACK_BYTE;
-                    } else if (callBack instanceof InputStreamCallBack) {
-                        responseIns = response.body().byteStream();
-                        _type = TYPE_CALLBACK_INS;
-                    } else if (callBack instanceof JsonCallBack) {
-                        _type = TYPE_CALLBACK_JSON;
-                        responseException = null;
-                        try {
-                            responseJson = new JSONObject(response.body().string());
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                            responseException = e;
-                        }
-                    }
-                _callBackHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        switch (_type) {
-                            case TYPE_CALLBACK_STRING:
-                                ((StringCallBack) callBack).onSuccess(responseStr);
-                                break;
-                            case TYPE_CALLBACK_BYTE:
-                                ((BytesCallBack) callBack).onSuccess(responseByte);
-                                break;
-                            case TYPE_CALLBACK_INS:
-                                ((InputStreamCallBack) callBack).onSuccess(responseIns);
-                                break;
-                            case TYPE_CALLBACK_JSON:
-                                if (responseJson == null) {
-                                    callBack.onFailure(request, responseException);
-                                } else {
-                                    ((JsonCallBack) callBack).onSuccess(responseJson);
-                                }
-                                break;
-                            case TYPE_CALLBACK_FAIL:
-                                callBack.onFailure(request, responseException);
-                                break;
-                        }
-                    }
-                });
-            }
-        });
-    }
+                         @Override
+                         public void onResponse(final Response response) throws IOException {
+                             _callBackHandler.post(new Runnable() {
+                                 @Override
+                                 public void run() {
+                                     callBack.onHandleSuccess(request, response);
+                                     LogUtil.e("tag","---------------------");
+                                 }
+                             });
+                         }
+                     }
 
-    public class NoNetException extends Exception {
-        public NoNetException(String msg){
-            super(msg);
-        }
-
+        );
     }
 
 
-
-    public static boolean isConnected(Context context){
-        if (null == context ) {
+    public static boolean isConnected(Context context) {
+        if (null == context) {
             return false;
         }
-        ConnectivityManager connMgr	= (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        if(null != connMgr){
-            NetworkInfo networkInfo	= connMgr.getActiveNetworkInfo();
+        ConnectivityManager connMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (null != connMgr) {
+            NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
             return (null != networkInfo && networkInfo.isConnected());
         }
 
         return false;
+    }
+
+    public void cancel() {
+
     }
 
 }
