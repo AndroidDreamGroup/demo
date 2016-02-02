@@ -62,7 +62,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     }
 
     private void get() {
-        new HttpUtil(this).get("http://weatherapi.market.xiaomi.com/wtr-v2/weather?cityId=101010100", null, new StringCallBack(){
+        new HttpUtil(this).get("http://weatherapi.market.xiaomi.com/wtr-v2/weather?cityId=101010100", new StringCallBack(){
 
             @Override
             public void onSuccess(String reseponse) {

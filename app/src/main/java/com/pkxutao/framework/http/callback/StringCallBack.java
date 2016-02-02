@@ -20,11 +20,7 @@ public abstract class StringCallBack extends HttpCallBack {
     }
 
     @Override
-    public void onHandleSuccess(Request request, Response response) {
-        try {
-            onSuccess(response.body().string());//TODO android.os.NetworkOnMainThreadException
-        } catch (IOException e) {
-            e.printStackTrace();onFailure(request, e);
-        }
+    public void onHandleSuccess(Request request, Response response, String responseStr) {
+        onSuccess(responseStr);
     }
 }

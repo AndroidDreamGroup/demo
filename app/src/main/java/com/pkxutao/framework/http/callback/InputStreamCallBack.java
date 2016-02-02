@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
+ * 回调inputStream接口
  * Created by pkxut on 2016/2/1.
  */
 public abstract class InputStreamCallBack extends HttpCallBack {
@@ -21,7 +22,7 @@ public abstract class InputStreamCallBack extends HttpCallBack {
     }
 
     @Override
-    public void onHandleSuccess(Request request, Response response) {
+    public void onHandleSuccess(Request request, Response response, String responseStr) {
         try {
             onSuccess(response.body().byteStream());
         } catch (IOException e) {

@@ -3,14 +3,16 @@ package com.pkxutao.framework.http.callback;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.internal.$Gson$Types;
+import com.pkxutao.framework.util.LogUtil;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 
+import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 /**
- *
+ * 回调Bean实体接口
  * Created by pkxutao on 16/1/1.
  */
 public abstract class EntityCallBack<T> extends HttpCallBack{
@@ -26,8 +28,7 @@ public abstract class EntityCallBack<T> extends HttpCallBack{
     }
 
     @Override
-    public void onHandleSuccess(Request request, Response response) {
-        String responseStr = response.body().toString();
+    public void onHandleSuccess(Request request, Response response, String responseStr) {
         T entity = null;
         try {
             entity = new Gson().fromJson(responseStr, mType);

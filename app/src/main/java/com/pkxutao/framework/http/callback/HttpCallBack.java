@@ -9,5 +9,5 @@ import com.squareup.okhttp.Response;
  */
 public abstract class HttpCallBack {
     public abstract void onHandleFailure(Request request, Exception e);
-    public abstract void onHandleSuccess(Request request, Response response);
+    public abstract void onHandleSuccess(Request request, Response response, String responseStr);
 }

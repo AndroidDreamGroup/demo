@@ -5,8 +5,8 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 
+import com.pkxutao.framework.Tip;
 import com.pkxutao.framework.http.callback.HttpCallBack;
-import com.pkxutao.framework.util.LogUtil;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.FormEncodingBuilder;
@@ -17,10 +17,8 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.CookieManager;
@@ -31,40 +29,42 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 网络请求工具类
  * Created by pkxutao on 16/1/1.
  */
 public class HttpUtil {
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     public static final String HOST = "http://appapi.estay.com";
-    private OkHttpClient _okHttpClient;
-    private Context _context;
-    Handler _callBackHandler;
-    private boolean _isShowTip = false;//网络请求失败时是否自动弹出tip提示
-    HttpUtil _httpUtil;
+    private OkHttpClient mClient;
+    private Context mContext;
+    Handler mHandler;
+    private boolean isShowTip = false;//网络请求失败时是否自动弹出tip提示
+    HttpUtil mHttpUtil;
+    private Call mCall;
 
     public HttpUtil(Context context) {
-        this._context = context;
-        _httpUtil = this;
-        _callBackHandler = new Handler(context.getMainLooper());
+        this.mContext = context;
+        mHttpUtil = this;
+        mHandler = new Handler(context.getMainLooper());
     }
 
     public HttpUtil(Context context, OkHttpClient _okHttpClient) {
-        this._context = context;
-        _httpUtil = this;
-        _callBackHandler = new Handler(context.getMainLooper());
-        this._okHttpClient = _okHttpClient;
+        this.mContext = context;
+        mHttpUtil = this;
+        mHandler = new Handler(context.getMainLooper());
+        this.mClient = _okHttpClient;
     }
 
 
     private OkHttpClient getClient() {
-        if (_okHttpClient == null) {
-            _okHttpClient = new OkHttpClient();
-            _okHttpClient.setReadTimeout(15, TimeUnit.SECONDS);
-            _okHttpClient.setCookieHandler(new CookieManager(
-                    new PersistentCookieStore(_context.getApplicationContext()),
+        if (mClient == null) {
+            mClient = new OkHttpClient();
+            mClient.setReadTimeout(15, TimeUnit.SECONDS);
+            mClient.setCookieHandler(new CookieManager(
+                    new PersistentCookieStore(mContext.getApplicationContext()),
                     CookiePolicy.ACCEPT_ALL));
         }
-        return _okHttpClient;
+        return mClient;
     }
 
     /**
@@ -92,13 +92,12 @@ public class HttpUtil {
     }
 
     /**
-     * get同步请求
+     * get异步请求
      *
      * @param url      自定义url
-     * @param params
      * @param callBack 回调接口  @throws IOException
      */
-    public void get(String url, Params params, HttpCallBack callBack) {
+    public void get(String url, HttpCallBack callBack) {
         Request request = new Request.Builder()
                 .url(url)
                 .build();
@@ -387,17 +386,17 @@ public class HttpUtil {
      * @param callBack
      */
     private void request(final Request request, final HttpCallBack callBack) {
-//        if (_isShowTip && !isConnected(_context)) {
+//        if (isShowTip && !isConnected(mContext)) {
 ////            callBack.onFail(request, new NoNetException("网络错误，请设置网络"));
-//            Tip.show(_context, "网络错误，请设置网络");
+//            Tip.show(mContext, "网络错误，请设置网络");
 //            return;
 //        }
         OkHttpClient okHttpClient = getClient();
-        final Call call = okHttpClient.newCall(request);
-        call.enqueue(new Callback() {
+        mCall = okHttpClient.newCall(request);
+        mCall.enqueue(new Callback() {
                          @Override
                          public void onFailure(final Request request, final IOException e) {
-                             _callBackHandler.post(new Runnable() {
+                             mHandler.post(new Runnable() {
                                  @Override
                                  public void run() {
                                      callBack.onHandleFailure(request, e);
@@ -407,11 +406,11 @@ public class HttpUtil {
 
                          @Override
                          public void onResponse(final Response response) throws IOException {
-                             _callBackHandler.post(new Runnable() {
+                            final String responseStr = response.body().string();//在ui线程会报NetworkOnMainThreadException
+                             mHandler.post(new Runnable() {
                                  @Override
                                  public void run() {
-                                     callBack.onHandleSuccess(request, response);
-                                     LogUtil.e("tag","---------------------");
+                                     callBack.onHandleSuccess(request, response, responseStr);
                                  }
                              });
                          }
@@ -435,7 +434,7 @@ public class HttpUtil {
     }
 
     public void cancel() {
-
+        mCall.cancel();
     }
 
 }
