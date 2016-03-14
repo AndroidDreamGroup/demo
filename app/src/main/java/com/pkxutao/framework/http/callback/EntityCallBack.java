@@ -18,6 +18,8 @@ import java.lang.reflect.Type;
 public abstract class EntityCallBack<T> extends HttpCallBack{
     Type mType;
 
+    public boolean mIsShowTip = false;
+
     public abstract void onSuccess(T entity);
 
     public abstract void onFailure(Request request, Exception e);
@@ -36,6 +38,7 @@ public abstract class EntityCallBack<T> extends HttpCallBack{
             e.printStackTrace();
         }
         //这一层可以预先处理一些统一的需求，例如：判断是否是业务逻辑错误而toast erroMsg
+
         if (entity == null){
             onFailure(request, new JsonSyntaxException("解析失败"));
         }else {
@@ -47,8 +50,14 @@ public abstract class EntityCallBack<T> extends HttpCallBack{
         this.mType = getSuperclassTypeParameter(getClass());
     }
 
+    public EntityCallBack showTip(){
+        mIsShowTip = true;
+        return this;
+    }
+
     /**
-     * Returns the type from super class's type parameter in {@link $Gson$Types#canonicalize
+     * Returns the type fr
+     * om super class's type parameter in {@link $Gson$Types#canonicalize
      * canonical form}.
      */
     public static Type getSuperclassTypeParameter(Class<?> subclass) {

@@ -17,8 +17,10 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
+
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.CookieManager;
@@ -53,12 +55,14 @@ public class HttpUtil {
         mHttpUtil = this;
         mHandler = new Handler(context.getMainLooper());
         this.mClient = _okHttpClient;
+        mClient.interceptors().add(new CommonInterceptor());
     }
 
 
     private OkHttpClient getClient() {
         if (mClient == null) {
             mClient = new OkHttpClient();
+            mClient.interceptors().add(new CommonInterceptor());
             mClient.setReadTimeout(15, TimeUnit.SECONDS);
             mClient.setCookieHandler(new CookieManager(
                     new PersistentCookieStore(mContext.getApplicationContext()),
@@ -394,27 +398,27 @@ public class HttpUtil {
         OkHttpClient okHttpClient = getClient();
         mCall = okHttpClient.newCall(request);
         mCall.enqueue(new Callback() {
-                         @Override
-                         public void onFailure(final Request request, final IOException e) {
-                             mHandler.post(new Runnable() {
-                                 @Override
-                                 public void run() {
-                                     callBack.onHandleFailure(request, e);
-                                 }
-                             });
-                         }
+                          @Override
+                          public void onFailure(final Request request, final IOException e) {
+                              mHandler.post(new Runnable() {
+                                  @Override
+                                  public void run() {
+                                      callBack.onHandleFailure(request, e);
+                                  }
+                              });
+                          }
 
-                         @Override
-                         public void onResponse(final Response response) throws IOException {
-                            final String responseStr = response.body().string();//在ui线程会报NetworkOnMainThreadException
-                             mHandler.post(new Runnable() {
-                                 @Override
-                                 public void run() {
-                                     callBack.onHandleSuccess(request, response, responseStr);
-                                 }
-                             });
-                         }
-                     }
+                          @Override
+                          public void onResponse(final Response response) throws IOException {
+                              final String responseStr = response.body().string();//在ui线程会报NetworkOnMainThreadException
+                              mHandler.post(new Runnable() {
+                                  @Override
+                                  public void run() {
+                                      callBack.onHandleSuccess(request, response, responseStr);
+                                  }
+                              });
+                          }
+                      }
 
         );
     }
