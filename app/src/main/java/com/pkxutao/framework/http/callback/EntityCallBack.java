@@ -20,6 +20,8 @@ public abstract class EntityCallBack<T> extends HttpCallBack{
 
     public boolean mIsShowTip = false;
 
+    private String mResponseStr;
+
     public abstract void onSuccess(T entity);
 
     public abstract void onFailure(Request request, Exception e);
@@ -31,6 +33,7 @@ public abstract class EntityCallBack<T> extends HttpCallBack{
 
     @Override
     public void onHandleSuccess(Request request, Response response, String responseStr) {
+        mResponseStr = responseStr;
         T entity = null;
         try {
             entity = new Gson().fromJson(responseStr, mType);
@@ -53,6 +56,14 @@ public abstract class EntityCallBack<T> extends HttpCallBack{
     public EntityCallBack showTip(){
         mIsShowTip = true;
         return this;
+    }
+
+    /**
+     * 获取接口返回原始数据
+     * @return 接口返回原始数据
+     */
+    public String getResponseStr() {
+        return mResponseStr;
     }
 
     /**

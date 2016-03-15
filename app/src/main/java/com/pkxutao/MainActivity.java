@@ -1,6 +1,5 @@
 package com.pkxutao;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -15,7 +14,6 @@ import com.pkxutao.framework.http.callback.StringCallBack;
 import com.pkxutao.framework.util.LogUtil;
 import com.pkxutao.framework.R;
 import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
 
 public class MainActivity extends Activity implements View.OnClickListener {
     private final static String TAG = MainActivity.class.getSimpleName();
@@ -98,6 +96,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
             @Override
             public void onSuccess(VersionDTO entity) {
                 LogUtil.e(TAG, entity.getMsg());
+                LogUtil.e(TAG, "接口返回原始数据: " + getResponseStr());
                 mText.setText(entity.getMsg());
 //                if (entity != null){
 //                    LogUtil.e(TAG, entity.getMsg());

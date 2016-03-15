@@ -5,7 +5,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 
-import com.pkxutao.framework.Tip;
 import com.pkxutao.framework.http.callback.HttpCallBack;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.Callback;
